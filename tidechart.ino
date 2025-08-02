@@ -25,11 +25,12 @@ JsonArray predictions;
 float minTide, maxTide;
 String highTideEvents[2];
 String lowTideEvents[2];
+int dataDayOfYear = -1;
 
-// DigiCert Root certificate
+// DigiCert Global Root G2 certificate
 const char* root_ca = \
 "-----BEGIN CERTIFICATE-----\n" \
-"<YOUR_CERTIFICATE_HERE>" \
+"Add updated cert here!"
 "-----END CERTIFICATE-----\n";
 
 void fetchAndDisplayTides();
@@ -106,10 +107,25 @@ void fetchAndDisplayTides() {
     return;
   }
 
-  if (getTidePredictions()) {
-    processTidePredictions();
-    drawTideChart(timeinfo);
+  if (timeinfo.tm_yday != dataDayOfYear) {
+    Serial.println("New day detected. Fetching fresh tide data...");
+    tft.fillScreen(TFT_BLACK); // Clear screen to show status
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.drawString("Fetching new tide data...", tft.width()/2 - 100, tft.height()/2, 2);
+
+    if (getTidePredictions()) {
+      processTidePredictions();
+      dataDayOfYear = timeinfo.tm_yday;
+      Serial.println("Successfully fetched and processed new data.");
+    } else {
+      Serial.println("Failed to fetch new tide data. Will retry later.");
+      return;
+    }
+  } else {
+    Serial.println("Data for today already cached. Redrawing chart.");
   }
+
+  drawTideChart(timeinfo);
 }
 
 /**
